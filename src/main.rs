@@ -11,6 +11,12 @@ macro_rules! grad_implem {
     ($const:literal) => {0};
     ($var:ident)=>{1};
     ($const:literal*$var:ident) => {$const};
+    
+    // need to figure out how to generalize everything's expressions to be recursive
+    // power rule
+    ($ty:ty:$t1:tt powi($base:ident,$num:literal)) => {
+        (($num) *$ty::powi($base,$num-1))
+    };
     // product rule
     // matching is going to get v fun lol
     // ($lhs:pat*$rhs:pat) => {
@@ -33,6 +39,11 @@ fn main() {
     // };
 
     let square = |x| {grad!(x*x)};
-    println!("Square: {:?}",square(10));
+    // println!("Square: {:?}",square(10));
+    assert!(square(5) == (25,10));
+    
+    // 
+    let power = |x| {grad!(f32::powi(x,4))};
+    assert!(power(2)==(16,32)); 
     // create proper ish test suite at some point
 }
