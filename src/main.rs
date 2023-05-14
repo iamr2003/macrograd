@@ -5,6 +5,8 @@ macro_rules! grad {
         ($($ops)*,grad_implem!($($ops)*))
     };
 }
+//
+// when I want to write custom syntax for relu or something, 
 
 macro_rules! grad_implem {
     // constant and basic multiplicaton rules
@@ -13,13 +15,15 @@ macro_rules! grad_implem {
     ($const:literal*$var:ident) => {$const};
     
     // need to figure out how to generalize everything's expressions to be recursive
+    // this might get hard
+
+
     // power rule
-    // ($ty:ty:$t1:tt powi($base:ident,$num:literal)) => {
-    //     (($num) *$ty::powi($base,$num-1))
-    // };
     ($var:ident.powi($pow:literal)) => {
         (f64::from($pow)*$var.powi($pow-1)) //we're using f32 in this proj
     };
+
+    // analog for powf can exist
 
     // log rules
     ($var:ident.ln()) => {(1.0/$var)}; // might have a div 0 issue
@@ -32,6 +36,12 @@ macro_rules! grad_implem {
     // ($lhs:pat*$rhs:pat) => {
     //     (grad_implem!(lhs)*rhs + lhs*grad_implem!(rhs))
     // };
+
+    // parens is the best we can do for now I think
+    (($lhs:expr)*($rhs:expr)) => {
+        ((grad_implem!($lhs))*($rhs) + ($lhs)*(grad_implem!($rhs)))
+    };
+
     ($lhs:ident*$rhs:ident) => {
         (grad_implem!($lhs)*$rhs + $lhs*grad_implem!($rhs))
     };
@@ -58,7 +68,7 @@ fn main() {
     let three_mul = |x| {grad!(3*x)};
     let log = |x:f64| {grad!(x.ln())};
     let powi = |x:f64| {grad!(x.powi(3))};
-    // let prod = |x| {grad!(ln(x)*x)};
+    let prod = |x:f64| {grad!((x.ln())*(x))};
     // println!("Square: {:?}",square(10));
     assert!(square(5) == (25,10));
     assert!(three_mul(2) == (6,3));
