@@ -14,9 +14,19 @@ macro_rules! grad_implem {
     
     // need to figure out how to generalize everything's expressions to be recursive
     // power rule
-    ($ty:ty:$t1:tt powi($base:ident,$num:literal)) => {
-        (($num) *$ty::powi($base,$num-1))
+    // ($ty:ty:$t1:tt powi($base:ident,$num:literal)) => {
+    //     (($num) *$ty::powi($base,$num-1))
+    // };
+    ($var:ident.powi($pow:literal)) => {
+        (f64::from($pow)*$var.powi($pow-1)) //we're using f32 in this proj
     };
+
+    // log rules
+    ($var:ident.ln()) => {(1.0/$var)}; // might have a div 0 issue
+
+
+    //divison rule
+
     // product rule
     // matching is going to get v fun lol
     // ($lhs:pat*$rhs:pat) => {
@@ -25,6 +35,12 @@ macro_rules! grad_implem {
     ($lhs:ident*$rhs:ident) => {
         (grad_implem!($lhs)*$rhs + $lhs*grad_implem!($rhs))
     };
+
+    // --- important one, the chain rule
+    //
+
+    // trig rules
+    //
     // match everything as just itself if not implemented
     // SHOULD GET REPLACED WITH MORE EXPLICIT FOR USEFUL PARSING
     // ($all:tt) =>{$all}
@@ -39,11 +55,19 @@ fn main() {
     // };
 
     let square = |x| {grad!(x*x)};
+    let three_mul = |x| {grad!(3*x)};
+    let log = |x:f64| {grad!(x.ln())};
+    let powi = |x:f64| {grad!(x.powi(3))};
+    // let prod = |x| {grad!(ln(x)*x)};
     // println!("Square: {:?}",square(10));
     assert!(square(5) == (25,10));
+    assert!(three_mul(2) == (6,3));
+    assert!(log(2.0) == (2.0_f64.ln(),0.5));
+    assert!(powi(2.0) == (8.0,12.0));
+
     
-    // 
-    let power = |x| {grad!(f32::powi(x,4))};
-    assert!(power(2)==(16,32)); 
+    // pow syntax is wack
+    // let power = |x| {grad!(f32::powi(x,4))};
+    // assert!(power(2)==(16,32)); 
     // create proper ish test suite at some point
 }
