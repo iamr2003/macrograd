@@ -39,7 +39,7 @@ macro_rules! grad_implem {
 
     // parens is the best we can do for now I think
     (($lhs:expr)*($rhs:expr)) => {
-        ((grad_implem!($lhs))*($rhs) + ($lhs)*(grad_implem!($rhs)))
+        (((grad_implem!($lhs))*($rhs)) + (($lhs)*(grad_implem!($rhs))))
     };
 
     ($lhs:ident*$rhs:ident) => {
@@ -51,6 +51,9 @@ macro_rules! grad_implem {
 
     // trig rules
     //
+    ($var:ident.sin()) => {($var.cos())};
+    ($var:ident.cos()) => {(-$var.tan())};
+    ($var:ident.tan()) => {(1.0/($var.cos() * $var.cos()))};
     // match everything as just itself if not implemented
     // SHOULD GET REPLACED WITH MORE EXPLICIT FOR USEFUL PARSING
     // ($all:tt) =>{$all}
@@ -68,7 +71,11 @@ fn main() {
     let three_mul = |x| {grad!(3*x)};
     let log = |x:f64| {grad!(x.ln())};
     let powi = |x:f64| {grad!(x.powi(3))};
-    let prod = |x:f64| {grad!((x.ln())*(x))};
+    let sin = |x:f64| {grad!(x.sin())};
+    let cos = |x:f64| {grad!(x.cos())};
+    let tan = |x:f64| {grad!(x.tan())};
+
+    // let prod = |x:f64| {grad!((x.ln())*(x))};
     // println!("Square: {:?}",square(10));
     assert!(square(5) == (25,10));
     assert!(three_mul(2) == (6,3));
