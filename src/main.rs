@@ -6,13 +6,8 @@ macro_rules! grad {
 }
 //
 // get functional for basic ML functions, ReLU, sigmoid, etc.
-//
-// macro_rules! munch {
-//     ($($ops:tt)*) => {
-//         //is not reinterpreted
-//         grad_implem!($($ops)*)
-//     }
-// }
+
+//will need a macro to parenthesize everything, basically make into an AST
 
 // #[recursion_limit = "512"]
 macro_rules! grad_implem {
@@ -33,11 +28,14 @@ macro_rules! grad_implem {
     (($($lhs:tt)*) + ($($rhs:tt)*)) => {
         grad_implem!($($lhs)*) + grad_implem!($($rhs)*)
     };
-    // All recursive rules will need to use tt muncher
 
-    // power rule
+    (($($lhs:tt)*) - ($($rhs:tt)*)) => {
+        grad_implem!($($lhs)*) - grad_implem!($($rhs)*)
+    };
+
+    //power rule
     ($var:ident.powi($pow:literal)) => {
-        (f64::from($pow) * $var.powi($pow - 1)) //we're using f32 in this proj
+        (f64::from($pow) * $var.powi($pow - 1))
     };
 
     // analog for powf can exist
@@ -47,13 +45,7 @@ macro_rules! grad_implem {
         (1.0 / $var)
     }; // might have a div 0 issue
 
-    //divison rule
 
-    // product rule
-    // matching is going to get v fun lol
-    // ($lhs:pat*$rhs:pat) => {
-    //     (grad_implem!(lhs)*rhs + lhs*grad_implem!(rhs))
-    // };
 
     //sugar
     ($lhs:ident*$rhs:ident) => {
@@ -65,9 +57,19 @@ macro_rules! grad_implem {
         (grad_implem!($($lhs)*) * $($rhs)* + $($lhs)* * grad_implem!($($rhs)*))
     };
 
+    //generalized division rule
+    (($($lhs:tt)*) * ($($rhs:tt)*)) => {
+        (((grad_implem!($($lhs)*) * $($rhs)* - $($lhs)* * grad_implem!($($rhs)*))) / ( $($rhs)*.powi(2)))
+    };
+
+    //the special one, the chain rule
+    //has weird syntax with a trailing function
+    //this one could use the name of the variable
+    (($($inside:tt)*).$func:ident($($args:tt)*)) => {
+        ((|x:f64| grad_implem!(x.$func($($args)*)))($($inside)*) *grad_implem!($($inside)*))
+    };
 
     // trig rules
-    //
     ($var:ident.sin()) => {
         ($var.cos())
     };
@@ -93,9 +95,9 @@ fn main() {
     let log = |x: f64| grad!(x.ln());
     let powi = |x: f64| grad!(x.powi(3));
     let powi_parts = |x: f64| grad!((x) * ((x) * (x)));
+    let nested_powi = |x: f64| grad!(((x) - (1.0)).powi(3));
 
-
-    let add = |x: f64| grad!((2.0 * x) + ((x) + (3.0)));
+    let add = |x: f64| grad!((4.0 * x) - ((x) + (3.0)));
 
     // let sin = |x:f64| {grad!(x.sin())};
     // let cos = |x:f64| {grad!(x.cos())};
@@ -108,7 +110,8 @@ fn main() {
     assert!(log(2.0) == (2.0_f64.ln(), 0.5));
     assert!(powi(2.0) == (8.0, 12.0));
     assert!(powi_parts(2.0) == (8.0, 12.0));
-    assert!(add(5.0) == (18.0, 3.0));
+    assert!(nested_powi(3.0) == (8.0, 12.0));
+    assert!(add(5.0) == (12.0, 3.0));
 
     println!("Passed all tests");
 
