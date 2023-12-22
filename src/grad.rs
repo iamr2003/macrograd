@@ -9,6 +9,9 @@ macro_rules! grad {
 // get functional for basic ML functions, ReLU, sigmoid, etc.
 
 //will need a macro to parenthesize everything, basically make into an AST
+// macro_rules! paren {
+//
+// }
 
 macro_rules! grad_implem {
 
@@ -58,11 +61,35 @@ macro_rules! grad_implem {
         (((grad_implem!($($lhs)*) * $($rhs)* - $($lhs)* * grad_implem!($($rhs)*))) / ( $($rhs)*.powi(2)))
     };
 
+    //make some rules from max and min
+    //should probably generalize it with computable expressions
+    //should check equality edge case a little more thoroughly
+    (($($var:tt)*).max($($args:tt)*)) => {
+        //should be doing the max, then checking the  xsides 
+        if $($var)* > $($args)*{
+            grad_implem!($($var)*)
+        } 
+        else{
+            grad_implem!($($args)*)
+        }
+    };
+
+    (($($var:tt)*).min($($args:tt)*)) => {
+        //should be doing the max, then checking the sides 
+        if $($var)* < $($args)*{
+            grad_implem!($($var)*)
+        } 
+        else{
+            grad_implem!($($args)*)
+        }
+    };
+
     //the special one, the chain rule
     //has weird syntax with a trailing function
     (($($inside:tt)*).$func:ident($($args:tt)*)) => {
         ((|x:f64| grad_implem!(x.$func($($args)*)))($($inside)*) *grad_implem!($($inside)*))
     };
+    
 
     // trig rules
     ($var:ident.sin()) => {

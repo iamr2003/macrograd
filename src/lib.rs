@@ -4,6 +4,7 @@ mod grad;
 
 #[cfg(test)]
 mod grad_implem_tests {
+    //procedurally generating some of these with something else would be helpful
     #[test]
     fn old_tests() {
         let square = |x: f64| grad!(x * x);
@@ -22,5 +23,10 @@ mod grad_implem_tests {
         assert_eq!(powi_parts(2.0), (8.0, 12.0));
         assert_eq!(nested_powi(3.0), (8.0, 12.0));
         assert_eq!(add(5.0), (12.0, 3.0));
+    }
+
+    #[test]
+    fn relu() {
+        let relu = |x: f64| grad!((x).max(0.0));
     }
 }
